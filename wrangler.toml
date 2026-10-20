@@ -1,0 +1,9 @@
+name = "workbuddy-checkin-trigger"
+main = "worker.js"
+compatibility_date = "2026-09-22"
+account_id = "<YOUR_CF_ACCOUNT_ID>"
+
+# 每日北京 10:00（= UTC 02:00）确定性触发，替代 GitHub 不可靠的 schedule。
+# 把 <YOUR_CF_ACCOUNT_ID> 换成你的 Cloudflare 账号 ID（CF 控制台右侧可见，非密钥）。
+# 想改时间直接改这里，例如 "30 1 * * *" = 北京 09:30。
+crons = ["0 2 * * *"]

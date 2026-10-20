@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+.wrangler/
+.dev.vars
+.miniflare/
+
+# secrets / local creds
+.env
+.env.*
+*.local
+workbuddy-desktop.info
+CodeBuddyExtension/
+
+# python
+__pycache__/
+*.pyc
+
+# os
+.DS_Store
+Thumbs.db
+
+# added by github-repo-publisher
+appid_secret.txt
+wechat.env
+*.env
+credentials.json
+*.pem
+id_rsa
+id_dsa
+id_ed25519
