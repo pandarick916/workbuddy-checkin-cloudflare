@@ -61,6 +61,8 @@ account_id = "你的真实AccountID"
 ### 3.4 核心概念：什么是"令牌"（token），为什么要它
 签到本质是一个"带身份的网络请求"。要让自动脚本替你签到，它必须知道"你是谁"——这个身份证明就是 **accessToken**（一串字符）。
 
+> **WorkBuddy 5.6.0+ 注意**：从 5.6.0 起，令牌在 `workbuddy-desktop.info` 里改成了 **AES-256-GCM 加密信封**（`auth.accessToken` 不再是明文字符串，而是一个加密对象）。本仓库的取令牌脚本（`get_token.cjs` / `decrypt_workbuddy_token.py`）会**自动解密**，你无需关心加密细节；只要本机 WorkBuddy 桌面端已安装并登录过，双击/运行脚本即可拿到明文令牌。
+
 - 它来自你本机 WorkBuddy 桌面端的登录态文件 `workbuddy-desktop.info`。
 - **有效期约 55 天**，到期后脚本签到会失败，需要重新取一次（很正常，10 秒搞定）。
 - 它**只**放在 Cloudflare 的 Secret 里，**不会**写进任何代码或发到网上（本仓库已脱敏，看不到任何真实令牌）。
@@ -83,9 +85,10 @@ npx wrangler deploy
 ```
 看到 `Successfully deployed` 就成功了。
 
-> 拿令牌另外两种方式：
-> - **双击 `get_checkin_token.bat`**：自动读 accessToken 并复制到剪贴板（需 `python` 在 PATH）。
-> - **命令行**：`node get_token.cjs` 会把令牌直接打印出来，手动复制。
+> 拿令牌另外两种方式（均为 5.6.0+ 自动解密版）：
+> - **双击 `get_checkin_token.bat`**：自动解密 accessToken 并复制到剪贴板（需 Node.js）。
+> - **命令行**：`node get_token.cjs` 会把令牌直接打印出来；`python decrypt_workbuddy_token.py --auto` 等价（Python 版）。
+> - 若自动解密失败（极少情况），可手动在桌面端控制台取 `atRestSecretKey` 后跑 `python decrypt_workbuddy_token.py --at-rest-key "<key>"`，详见该脚本顶部注释。
 
 ### 3.6 验证部署成功
 - 回到 https://dash.cloudflare.com → **Workers & Pages**，能看到 `workbuddy-checkin-trigger` 这个 Worker。
@@ -116,8 +119,8 @@ A：第 3.3 步没填或填错。重新打开 `wrangler.toml` 核对 Account ID�
 **Q：某天发现没签到、积分没加？**
 A：最常见是令牌过期（约 55 天）。重跑第 3.5 步的 `wrangler secret put` 更新令牌即可。也可以在 CF Worker 的 **Logs / 监控** 里看报错。
 
-**Q：`get_checkin_token.bat` 双击报错"python 不是内部或外部命令"？**
-A：你电脑没把 Python 加进 PATH。两个办法：①装 Python 时勾选"Add to PATH"重装；②改用 `node get_token.cjs`（需要 Node.js，已装），它会把令牌打印出来，手动复制。
+**Q：`get_checkin_token.bat` 双击报错？**
+A：它依赖 Node.js（需要 `node` 在 PATH，部署 wrangler 时已经装了）。若提示找不到 WorkBuddy，请确认桌面端已安装并至少登录过一次；若提示无法取密钥，可手动打开桌面端控制台执行 `JSON.parse(process._linkedBinding('electron_browser_workbuddy_storage').loggerGet()).atRestSecretKey` 拿到 `atRestSecretKey`，再用 `python decrypt_workbuddy_token.py --at-rest-key "<key>"`。
 
 **Q：`deploy-cf-worker.bat` 中途卡住 / 报错？**
 A：它本质是依次执行 `wrangler login` → 读令牌 → `wrangler secret put` → `wrangler deploy`。哪步报错就按第 3.5 节的手动命令一步步跑，更容易看到具体原因。

@@ -1,6 +1,6 @@
 // worker.js — WorkBuddy 每日签到（Cloudflare Worker Cron 版，确定性触发）
 // 设计：用 CF Cron（确定性）替代 GitHub 不可靠的 schedule，直接调 WorkBuddy 接口签到。
-// 令牌存于 CF Secret: WORKBUDDY_TOKEN（本机 workbuddy-desktop.info 的 auth.accessToken，约55天过期需重拷）
+// 令牌存于 CF Secret: WORKBUDDY_TOKEN（本机 WorkBuddy 登录令牌，5.6.0+ 由 get_token.cjs 自动解密取出，约55天过期需重拷）
 // 触发：wrangler.toml 中 crons = ["0 2 * * *"] 即每日 UTC 02:00 = 北京 10:00（可改任意时间）
 
 const CHECKIN_BASE = "https://www.codebuddy.cn/v2";
