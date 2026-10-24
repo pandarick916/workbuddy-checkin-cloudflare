@@ -69,7 +69,6 @@ try {
 # 本机 WorkBuddy 可执行文件候选路径（--auto 用）；可用环境变量 WB_EXE 覆盖。
 WB_EXE_CANDIDATES = [
     os.environ.get("WB_EXE", ""),
-    r"D:\applications\WorkBuddy\WorkBuddy.exe",
     r"C:\Program Files\WorkBuddy\WorkBuddy.exe",
     os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "WorkBuddy", "WorkBuddy.exe"),
     os.path.join(os.environ.get("ProgramFiles", ""), "WorkBuddy", "WorkBuddy.exe"),
@@ -168,7 +167,27 @@ def extract_tokens(info_path: str, at_rest_secret_key: str) -> dict:
     return out
 
 
+def _detect_running_wb() -> str:
+    # 粉丝正用着 WorkBuddy，从运行进程取 exe 路径最可靠（不依赖安装位置）
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "(Get-Process WorkBuddy -ErrorAction SilentlyContinue).Path"],
+            capture_output=True, text=True, timeout=8,
+        )
+        for line in r.stdout.splitlines():
+            p = line.strip()
+            if p.lower().endswith("workbuddy.exe") and os.path.isfile(p):
+                return p
+    except Exception:
+        pass
+    return ""
+
+
 def find_wb_exe() -> str:
+    running = _detect_running_wb()
+    if running:
+        return running
     for p in WB_EXE_CANDIDATES:
         if p and os.path.isfile(p):
             return p
@@ -200,7 +219,7 @@ def selftest():
     # 造一个假 atRestSecretKey（base64 字符串，解码后 32 字节）
     fake = b64enc(_os.urandom(32))
     key_bytes, key_id = derive_key(fake)
-    sample_jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"
+    sample_jwt = "SELFTEST_PLACEHOLDER_NOT_A_REAL_TOKEN"
     env_b64 = seal(sample_jwt, key_bytes, key_id)
     got = decrypt_envelope(env_b64, key_bytes, key_id)
     assert got == sample_jwt, "往返解密不一致！"

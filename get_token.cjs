@@ -30,17 +30,45 @@ try {
 } catch (e) { process.stderr.write('ERR: ' + (e && e.stack || e)); process.exit(3); }
 `;
 
+function detectRunningWb() {
+  // 粉丝正用着 WorkBuddy，从运行进程取 exe 路径最可靠（不依赖安装位置）
+  try {
+    const r = spawnSync('powershell', [
+      '-NoProfile', '-Command',
+      '(Get-Process WorkBuddy -ErrorAction SilentlyContinue).Path',
+    ], { encoding: 'utf8', timeout: 8000 });
+    if (r.stdout) {
+      for (const line of r.stdout.split(/\r?\n/)) {
+        const p = line.trim();
+        if (p.toLowerCase().endsWith('workbuddy.exe') && fs.existsSync(p)) return p;
+      }
+    }
+  } catch (_) {}
+  return '';
+}
+
 function findWbExe() {
-  const candidates = [
-    process.env.WB_EXE,
-    'D:\\applications\\WorkBuddy\\WorkBuddy.exe',
-    'C:\\Program Files\\WorkBuddy\\WorkBuddy.exe',
-    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'WorkBuddy', 'WorkBuddy.exe'),
-    path.join(process.env.ProgramFiles || '', 'WorkBuddy', 'WorkBuddy.exe'),
+  const found = [];
+  if (process.env.WB_EXE) found.push(process.env.WB_EXE);
+  const running = detectRunningWb();
+  if (running) found.push(running); // 进程路径优先
+  const localApp = process.env.LOCALAPPDATA;
+  const bases = [
+    localApp,
+    process.env.ProgramFiles,
+    process.env['ProgramFiles(x86)'],
+    'C:\\Program Files',
+    'C:\\Program Files (x86)',
   ].filter(Boolean);
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
+  for (const b of bases) {
+    if (b === localApp) {
+      found.push(path.join(b, 'WorkBuddy', 'WorkBuddy.exe'));
+      found.push(path.join(b, 'Programs', 'WorkBuddy', 'WorkBuddy.exe'));
+    } else {
+      found.push(path.join(b, 'WorkBuddy', 'WorkBuddy.exe'));
+    }
   }
+  for (const p of found) if (p && fs.existsSync(p)) return p;
   return '';
 }
 
