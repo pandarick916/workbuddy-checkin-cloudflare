@@ -28,8 +28,20 @@
 ## 备选：GitHub Actions
 Fork 本仓库 → Settings → Secrets → 新建 `WORKBUDDY_TOKEN`（填上面拿到的 accessToken）→ 启用 Actions 工作流。
 
+## 让令牌一直不过期（自动同步）
+实测 accessToken 有效期是 **30 天**（早期写的是 55 天，不对）。到期后 Worker 会签到失败，
+而且失败信息会被旧版代码藏成一个看不懂的 TypeError，很容易漏掉。
+
+解决办法：本机 WorkBuddy 桌面端只要在用，就会自己续期令牌并写回本地。
+所以只要**定期把本机的最新令牌搬到云端**，Worker 就永远不会到期，全程不需要账号密码。
+
+- 手动：双击 `sync-token.bat`（或 `node sync-token.js`）
+- 脚本做了三件事：取本机令牌 → 写入 CF Secret → 真的调一次 Worker 验证结果
+- 已验证可挂定时执行（WorkBuddy automation，每周一 09:30）
+
 ## 注意
-- 令牌约 55 天过期，过期后重跑部署脚本更新 Secret 即可。
+- 令牌约 **30 天**过期。`sync-token.js` 会在写入前打印剩余天数，低于 7 天会提示。
+- 部署时 `wrangler.toml` 的 `name` 必须和 Cloudflare 上已有的 Worker 名一致，否则会**新建**一个 Worker，旧的那份继续跑，表面显示成功实际没生效。
 - 安全：令牌只存在你自己的 CF / GitHub Secret，不进代码、不公开。本仓库无任何真实令牌 / 密钥 / 账号路径。
 - 非官方脚本，接口可能随平台变动；仅供学习自动化，请遵守平台规则。
 

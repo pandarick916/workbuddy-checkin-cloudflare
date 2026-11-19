@@ -1,9 +1,14 @@
-name = "workbuddy-checkin-trigger"
+# ⚠️ name 必须和 Cloudflare 上已存在的 Worker 名一模一样。
+# 不一致时 wrangler 会「新建一个 Worker」而不是更新旧的，旧 Worker 继续按旧代码跑，
+# 表面显示部署成功，实际签到仍走旧的那份 —— 极难察觉。
+# 本仓库线上真实名称是 round-limit-17d2（CF 首次部署时自动生成的随机名）。
+name = "round-limit-17d2"
 main = "worker.js"
 compatibility_date = "2026-09-22"
 account_id = "<YOUR_CF_ACCOUNT_ID>"
 
 # 每日北京 10:00（= UTC 02:00）确定性触发，替代 GitHub 不可靠的 schedule。
 # 把 <YOUR_CF_ACCOUNT_ID> 换成你的 Cloudflare 账号 ID（CF 控制台右侧可见，非密钥）。
+# 留占位符会直接报 Invalid account ID，部署必失败。
 # 想改时间直接改这里，例如 "30 1 * * *" = 北京 09:30。
 crons = ["0 2 * * *"]

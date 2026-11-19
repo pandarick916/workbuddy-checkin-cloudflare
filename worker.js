@@ -20,8 +20,13 @@ async function apiCall(base, path, token, method = "POST", payload = {}) {
   };
   if (method !== "GET") init.body = JSON.stringify(payload);
   const resp = await fetch(url, init);
-  let body = null;
-  try { body = await resp.json(); } catch (e) { body = { raw: await resp.text() }; }
+  // 只读一次 body：先取 text，再尝试 JSON.parse。
+  // 旧写法 resp.json() 失败后再 resp.text() 会抛 "Body has already been used"，
+  // 把真实的 401 / HTML 错误页盖成 TypeError，排查时看不出任何原因。
+  const text = await resp.text();
+  let body;
+  try { body = JSON.parse(text); }
+  catch (e) { body = { raw: text.slice(0, 300) }; }
   return { status: resp.status, body };
 }
 
