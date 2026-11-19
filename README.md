@@ -25,9 +25,6 @@
   `JSON.parse(process._linkedBinding('electron_browser_workbuddy_storage').loggerGet()).atRestSecretKey`
   拿到 key 后 `python decrypt_workbuddy_token.py --at-rest-key "<key>"`。
 
-## 备选：GitHub Actions
-Fork 本仓库 → Settings → Secrets → 新建 `WORKBUDDY_TOKEN`（填上面拿到的 accessToken）→ 启用 Actions 工作流。
-
 ## 让令牌一直不过期（自动同步）
 实测 accessToken 有效期是 **30 天**（早期写的是 55 天，不对）。到期后 Worker 会签到失败，
 而且失败信息会被旧版代码藏成一个看不懂的 TypeError，很容易漏掉。
